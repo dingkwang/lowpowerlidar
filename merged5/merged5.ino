@@ -1,7 +1,7 @@
 // Low power LIDAR program
 #define RETURN_PIN   A5  // Arduino pin tied to Return pin on the OSLRF.
-int LRF = 13;                // the pin that the LED is atteched to
-int PIR = 2;              // the pin that the sensor is atteched to
+int LRF = 13;                // the output pin that the Delay Unit is atteched to
+int PIR = 2;              // the input pin that the PIR sensor is atteched to
 
 int return_val = 0;
 float pd[4] = {0};
@@ -122,7 +122,7 @@ void loop()
         temp = temp + return_val / 10;
       }
       pd[m] = pd[m] + temp / 4;  //Average the 4 distance at each large area 
-      Serial.print(pd[m]);
+      Serial.print(pd[m]);   //Print the average distnaces in the 4 large Areas
       Serial.print(',');
       m = m + 1;
     }

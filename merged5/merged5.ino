@@ -2,9 +2,14 @@
 #define RETURN_PIN   A5  // Arduino pin tied to Return pin on the OSLRF.
 int LRF = 13;                // the output pin that the Delay Unit is atteched to
 int PIR = 2;              // the input pin that the PIR sensor is atteched to
-
+int t_state;
 int return_val = 0;
 float pd[4] = {0};
+float dist[4] = {0};
+float trans[2][4] = {
+    {0.433, 0.458, 0.449, 0.428},
+    {-25.05, -29.4, -28.85, -25.55}
+};
 int vx = 0;       
 int vy = 0;         
 int i = 0;
@@ -23,12 +28,9 @@ int xyf[2][4] = { // Large Area
   {0, 200, 200, 0},
   {0, 0, 200, 200}
 };
-
-
-
-int state = LOW;             // by default, no motion detected
-int pir_val = 0;
-int t = 10;
+        
+int pir_val = 0; // by default, no motion detected
+int t = 0;
 
 void setup()
 {
@@ -77,18 +79,22 @@ void setup()
 
 void loop()
 {
-  pir_val = digitalRead(PIR);  // read PIR
+  t_state = digitalRead(PIR);  // read PIR
 
-  if (pir_val == HIGH && t == 0) {
-    t = 20; 
-    Serial.println("Motion Detected, wait to turn on LRF");
-    digitalWrite(LRF, LOW);
-    //delay(200000);
-    Serial.println("LRF ON");
+  if (t_state == HIGH) {
+    t = 2;  // Delay time for Motion leave 
+    if (pir_val == LOW){
+      pir_val = HIGH;
+      digitalWrite(LRF, LOW); // LOW is ON
+      Serial.println("Motion Detected, wait to turn on LRF");
+      delay(200000);
+      Serial.println("LRF ON");
+    }
   }
-  else if (pir_val == LOW && t == 0){
-    digitalWrite(LRF, HIGH); //should be HIGH
-    Serial.println("OFF");
+   else {
+   digitalWrite(LRF, HIGH); //HIGH is OFF
+   pir_val = LOW;
+   Serial.println("OFF");
   }
   
   while (t >0){
@@ -113,7 +119,7 @@ void loop()
         //      Serial.print(vy);
         //      Serial.print(',');
         return_val = 0;
-        delay(4000); // Wait for the MEMS mirror to stablize
+        delay(2000); // Wait for the MEMS mirror to stablize
         for (j = 0; j < 10; j++) { // Take Average of 10 measurement at each scanning location 
           //delay(1000);
           return_val = return_val + analogRead(RETURN_PIN);
@@ -121,23 +127,34 @@ void loop()
         }
         temp = temp + return_val / 10;
       }
-      pd[m] = pd[m] + temp / 4;  //Average the 4 distance at each large area 
-      Serial.print(pd[m]);   //Print the average distnaces in the 4 large Areas
-      Serial.print(',');
+      pd[m] = pd[m] + temp / 4;  //Average the 4 distance at each large area
+      
       m = m + 1;
     }
-    m = 0;
-    ms = pd[m];
-
-    for (m = 0; m < 4; m++) // Find the closest area in area 0, 1, 2, 3
-    {
-      if (pd[m] < ms)
-      {
-        ms = pd[m];
-        mi = m;
-      }
+    
+    for (i = 0; i<=3;i++) {
+        if (pd[i]>=50 && pd[i]<=130){ //Outside the range is invalid
+            dist[i] = pd[i]*trans[0][i]+trans[1][i];
+        } 
+        else{
+            dist[i] = 0;
+        }
+        Serial.print(dist[i]);   //Print the average distnaces in the 4 large Areas
+        Serial.print(',');
     }
-    Serial.println(mi);
+    
+    // m = 0;
+    // ms = dist[m];
+    
+    // for (m = 0; m < 4; m++) // Find the closest area in area 0, 1, 2, 3
+    // {
+      // if (dist[m] < ms)
+      // {
+        // ms = pd[m];
+        // mi = m;
+      // }
+    // }
+    // Serial.println(mi);
   }
 
 

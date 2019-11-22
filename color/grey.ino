@@ -8,16 +8,18 @@
 #define yp 9
 #define ym 10
 
+int T = 25;
+
 int t_state;
 int return_val = 0;
 float pd[4] = {0};
 float dist[4] = {0};
 float trans[2][4] = {
-    {0.433, 0.458, 0.449, 0.428},
-    {-25.05, -29.4, -28.85, -25.55}
+  {0.433, 0.458, 0.449, 0.428},
+  { -25.05, -29.4, -28.85, -25.55}
 };
-int vx = 0;       
-int vy = 0;         
+int vx = 0;
+int vy = 0;
 int i = 0;
 int j = 0;
 int k = 0;
@@ -29,13 +31,13 @@ int xy[2][4] = {  // Small Area
   {0, 50, 50, 0},
   {0, 0, 50, 50}
 };
-float r; 
+float r;
 
 int xyf[2][4] = { // Large Area
   {0, 200, 200, 0},
   {0, 0, 200, 200}
 };
-     
+
 int pir_val = 0; // by default, no motion detected
 int t = 0;
 
@@ -63,13 +65,15 @@ uint16_t colorm[8] = {BLACK, BLUE, RED, GREEN, CYAN, MAGENTA, YELLOW, WHITE};
 uint16_t color;
 uint16_t blu;
 uint16_t red;
+uint16_t grn;
+
 
 // You can use any (4 or) 5 pins
 
 Adafruit_SSD1331 display = Adafruit_SSD1331(&SPI, cs, dc, rst);
 int16_t dxy[2][4] = {
-    {0, 48, 48, 0},
-    {32,32, 0, 0}
+  {0, 48, 48, 0},
+  {32, 32, 0, 0}
 };
 
 
@@ -78,11 +82,11 @@ void setup()
 {
   pinMode(LRF, OUTPUT);      // initalize onboard LED as an output
   pinMode(PIR, INPUT);    // initialize PIR as an input
-  
-//  noInterrupts();
-//  CLKPR = _BV(CLKPCE);  // enable change of the clock prescaler
-//  CLKPR = _BV(CLKPS0);  // disvide frequency by 2
-//  interrupts();
+
+  //  noInterrupts();
+  //  CLKPR = _BV(CLKPCE);  // enable change of the clock prescaler
+  //  CLKPR = _BV(CLKPS0);  // disvide frequency by 2
+  //  interrupts();
 
   // Configure Timer 0 for phase correct PWM @ 25 kHz.
   TCCR0A = 0;           // undo the configuration done by...
@@ -122,40 +126,39 @@ void setup()
   //Serial.println("Display ON");
   display.fillScreen(WHITE);
   display.setCursor(0, 0);
-  
+
 }
 
 void loop()
 {
   t_state = digitalRead(PIR);  // read PIR
-
   if (t_state == HIGH) {
-    t = 50;  // Delay time for Motion leave 
-    if (pir_val == LOW){
+    t = T;  // Delay time for Motion leave
+    if (pir_val == LOW) {
       pir_val = HIGH;
       digitalWrite(LRF, LOW); // LOW is ON
       Serial.println("Motion Detected, wait to turn on LRF");
-      delay(200000);
+      delay(250000);
       Serial.println("LRF ON");
     }
   }
-   else {
-   display.fillScreen(BLACK);
-   //t = 10;
-   digitalWrite(LRF, HIGH); //HIGH is OFF
-   pir_val = LOW;
-   Serial.println("OFF");
+  else {
+    display.fillScreen(BLACK);
+    //t = 10;
+    digitalWrite(LRF, HIGH); //HIGH is OFF
+    pir_val = LOW;
+    Serial.println("OFF");
   }
-  
-  while (t >0){
-    t = t-1;   //Keep scan t freams until stop
+
+  while (t > 0) {
+    t = t - 1; //Keep scan t freams until stop
     Serial.print("t = ");
     Serial.println(t);
     m = 0;
     temp = 0;
     float pd[4] = {0};
 
-    for (k = 0; k <= 3; k++ ) { //Large Area 
+    for (k = 0; k <= 3; k++ ) { //Large Area
       temp = 0;
       for (i = 0; i <= 3; i++) { //Small Area
         vx = xy[0][i] + xyf[0][k];
@@ -170,10 +173,9 @@ void loop()
         //      Serial.print(',');
         return_val = 0;
         delay(10000); // Wait for the MEMS mirror to stablize 2000
-        for (j = 0; j < 10; j++) { // Take Average of 10 measurement at each scanning location 
-          //delay(1000);
+        for (j = 0; j < 10; j++) { // Take Average of 10 measurement at each scanning location
           return_val = return_val + analogRead(RETURN_PIN);
-          
+
         }
         temp = temp + return_val / 10;
       }
@@ -181,51 +183,50 @@ void loop()
       //Serial.print(pd[m]);
       m = m + 1;
     }
-    
-    for (i = 0; i<=3;i++) {
-        if (pd[i]>=50 && pd[i]<=130){ //Outside the range is invalid
-            dist[i] = pd[i]*trans[0][i]+trans[1][i];
-            r = (dist[i])/25;
-            red = (int16_t)(r * 0x1F);
-            blu = (int16_t)((1-r)*0x1F);
-            color = blu+(red<<8);
-            //testfillrects(dxy[0][i], dxy[1][i], color);
-            testfillrects(dxy[0][i], dxy[1][i], color);
-            //Serial.print("dist = ");
-            Serial.print(dist[i]); 
-            Serial.print(",");
-            //Serial.print(", color = ");
-          //  Serial.print(color, HEX);   //Print the average distnaces in the 4 large Areas
-           // Serial.print(',');
-            
-        } 
-        else{
-            dist[i] = 0;
-            testfillrects(dxy[0][i], dxy[1][i], BLACK);
+
+    for (i = 0; i <= 3; i++) {
+      if (pd[i] >= 50 && pd[i] <= 130) { //Outside the range is invalid
+        dist[i] = pd[i] * trans[0][i] + trans[1][i];
+        r = 2*(dist[i] - 6) / (25 - 6); // 5cm: min; 25cm: max
+        //r = 1 / (1 + pow(r / (1 - r), -8));
+        // GREY
+        //color = (int16_t)(r * BLUE) + (((int16_t)(r * BLUE)) << 5) + (((int16_t)(r * BLUE)) << 11);
+        //RED_BLUE
+        if (r > 1) {
+          color = BLUE + (((int16_t)((2 - r) * BLUE)) << 11);
         }
+        else {
+          color = RED + (int16_t)(BLUE * r);
+        }
+        //delay(500);
+        //red = (int16_t)(r * 0x1F);
+        //blu = (int16_t)((1-r)*0x1F);
+        //testfillrects(dxy[0][i], dxy[1][i], color);
+        testfillrects(dxy[0][i], dxy[1][i], color);
+                    Serial.print("dist = ");
+                    Serial.print(dist[i]);
+                    Serial.print(", r =  ");
+                    Serial.print(r, 2);
+                    Serial.print(",");
+        //Serial.print(", color = ");
+        //Serial.print(color, BIN);   //Print the average distnaces in the 4 large Areas
+        //Serial.print(',');
+
+      }
+      else {
+        dist[i] = 0;
+        testfillrects(dxy[0][i], dxy[1][i], BLACK);
+      }
     }
-    delay(500);
-    // m = 0;
-    // ms = dist[m];
-    
-    // for (m = 0; m < 4; m++) // Find the closest area in area 0, 1, 2, 3
-    // {
-      // if (dist[m] < ms)
-      // {
-        // ms = pd[m];
-        // mi = m;
-      // }
-    // }
-    // Serial.println(mi);
   }
 
 
 }
 
-void testfillrects(int16_t x, int16_t y, uint16_t color){
+void testfillrects(int16_t x, int16_t y, uint16_t color) {
   //
-  int16_t w = 48; 
-  int16_t h = 32; 
+  int16_t w = 48;
+  int16_t h = 32;
   display.fillRect(x, y, w, h, color);
 
 }

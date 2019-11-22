@@ -1,8 +1,13 @@
-int fadex = 1;         // how many points to fade the LED by
+int fadex = 3;         // how many points to fade the LED by
 float fadey = 1;         // how many points to fade the LED by
 int vx = 0;         // how bright the LED is
 float vyi = 0;
 int vy = 0;         // how bright the LED is
+
+#define xp 3
+#define xm 5
+#define yp 6
+#define ym 10
 
 void setup()
 {
@@ -47,13 +52,13 @@ void setup()
 
 void loop()
 {
-  //Serial.print(11);  // prints a label
-  //Serial.print("\t");      // prints a tab
+  Serial.print(11);  // prints a label
+  Serial.print("\t");      // prints a tab
   
-  analogWrite( 3,  vx);  // duty cycle = 1/160
-  analogWrite( 5,  255-vx);  // ~ 1/3
-  analogWrite( 9, vy);  // ~ 2/3
-  analogWrite(10, 255-vy);  // 159/160
+  //analogWrite( xp,  vx);  // duty cycle = 1/160
+  //analogWrite( xm,  255-vx);  // ~ 1/3
+  //analogWrite( yp, vy);  // ~ 2/3
+  analogWrite(ym, 255-vy);  // 159/160
 
   vx = vx + fadex;
 
@@ -67,5 +72,5 @@ void loop()
   if (vyi == 0 || vyi == 255) {
     fadey = -fadey ;
   }
-  delay(10000);
+  //delay(100);
 }

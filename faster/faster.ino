@@ -8,7 +8,7 @@
 #define yp 9
 #define ym 10
 
-int T = 25;
+int T = 1000;
 
 int t_state;
 int return_val = 0;

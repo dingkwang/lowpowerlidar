@@ -15,8 +15,8 @@ int return_val = 0;
 float pd[4] = {0};
 float dist[4] = {0};
 float trans[2][4] = {
-  {0.433, 0.458, 0.449, 0.428},
-  { -25.05, -29.4, -28.85, -25.55}
+  {0.54, 0.52, 0.5, 0.5},
+  { -28, -26.8, -24.9, -25.42}
 };
 int vx = 0;
 int vy = 0;
@@ -28,14 +28,16 @@ int mi = 0;
 float temp = 0;
 float ms = 0;
 int xy[2][4] = {  // Small Area
-  {0, 50, 50, 0},
-  {0, 0, 50, 50}
+//  {0, 55, 55, 0},
+//  {0, 0, 55, 55}
+  {0, 0, 0, 0},
+  {0, 0, 0, 0}
 };
 float r;
 
 int xyf[2][4] = { // Large Area
-  {0, 200, 200, 0},
-  {0, 0, 200, 200}
+  {210, 255, 255, 210},
+  {210, 210, 255, 255}
 };
 
 int pir_val = 0; // by default, no motion detected
@@ -71,10 +73,15 @@ uint16_t grn;
 // You can use any (4 or) 5 pins
 
 Adafruit_SSD1331 display = Adafruit_SSD1331(&SPI, cs, dc, rst);
+//int16_t dxy[2][4] = {
+//  {0, 48, 48, 0},
+//  {32, 32, 0, 0}
+//};
 int16_t dxy[2][4] = {
-  {0, 48, 48, 0},
-  {32, 32, 0, 0}
+  {48, 0, 0, 48},
+  {0, 0, 32, 32}
 };
+
 
 
 
@@ -133,29 +140,13 @@ void setup()
 void loop()
 {
   digitalWrite(LED_BUILTIN, HIGH);
-  t_state = digitalRead(PIR);  // read PIR
-  if (t_state == HIGH) {
-    t = T;  // Delay time for Motion leave
-    if (pir_val == LOW) {
-      pir_val = HIGH;
-      digitalWrite(LRF, LOW); // LOW is ON
-     // Serial.println("Motion Detected, wait to turn on LRF");
-      delay(250000);
- //     Serial.println("LRF ON");
-    }
-  }
-  else {
-    display.fillScreen(BLACK);
-    //t = 10;
-    digitalWrite(LRF, HIGH); //HIGH is OFF
-    pir_val = LOW;
-    //Serial.println("OFF");
-  }
+  t = 20;
 
   while (t > 0) {
     t = t - 1; //Keep scan t freams until stop
-    Serial.print("t = ");
-    Serial.println(t);
+   // Serial.print("t = ");
+    //Serial.println(t);
+    Serial.println(0);
     m = 0;
     temp = 0;
     float pd[4] = {0};
@@ -174,7 +165,7 @@ void loop()
         //      Serial.print(vy);
         //      Serial.print(',');
         return_val = 0;
-        delay(10000); // Wait for the MEMS mirror to stablize 2000
+        delay(10000); // Wait for the MEMS mirror to stablize 5000
         for (j = 0; j < 10; j++) { // Take Average of 10 measurement at each scanning location
           return_val = return_val + analogRead(RETURN_PIN);
 
@@ -182,20 +173,21 @@ void loop()
         temp = temp + return_val / 10;
       }
       pd[m] = pd[m] + temp / 4;  //Average the 4 distance at each large area
-      //Serial.print(pd[m]);
+      Serial.print(pd[m]);
+      Serial.print(',');
       m = m + 1;
     }
 
     for (i = 0; i <= 3; i++) {
-      if (pd[i] >= 50 && pd[i] <= 130) { //Outside the range is invalid
+      if (pd[i] >= 50 && pd[i] <= 115) { //Outside the range is invalid
         dist[i] = pd[i] * trans[0][i] + trans[1][i];
-        r = 2*(dist[i] - 6) / (25 - 6); // 5cm: min; 25cm: max
-        //r = 1 / (1 + pow(r / (1 - r), -8));
+        r = (dist[i]-5)/ 25; 
+        r = 2*pow(r, 0.5);
         // GREY
         //color = (int16_t)(r * BLUE) + (((int16_t)(r * BLUE)) << 5) + (((int16_t)(r * BLUE)) << 11);
         //RED_BLUE
         if (r > 1) {
-          color = BLUE + (((int16_t)((2 - r) * BLUE)) << 11);
+          color = BLUE + (((int16_t)((2 - r) * BLUE)) << 11);   
         }
         else {
           color = RED + (int16_t)(BLUE * r);
@@ -206,11 +198,11 @@ void loop()
         //testfillrects(dxy[0][i], dxy[1][i], color);
         testfillrects(dxy[0][i], dxy[1][i], color);
         digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-//                    Serial.print("dist = ");
-//                    Serial.print(dist[i]);
-//                    Serial.print(", r =  ");
-//                    Serial.print(r, 2);
-//                    Serial.print(",");
+                    Serial.print("dist = ");
+                    Serial.print(dist[i]);
+//         Serial.print(", r =  ");
+//         Serial.print(r, 2);
+//         Serial.print(",");
         //Serial.print(", color = ");
         //Serial.print(color, BIN);   //Print the average distnaces in the 4 large Areas
         //Serial.print(',');
